@@ -3,6 +3,10 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'dat.gui'
 
+// Texture
+const loader = new THREE.TextureLoader();
+const cross = loader.load('./cross.png');
+
 // Debug
 const gui = new dat.GUI()
 
@@ -15,14 +19,40 @@ const scene = new THREE.Scene()
 // Objects
 const geometry = new THREE.TorusGeometry( .7, .2, 16, 100 );
 
+const particlesGeomety = new THREE.BufferGeometry;
+const particlesCount = 5000;
+
+const posArray = new Float32Array(particlesCount * 3);
+// xyz,xyz
+
+for(let i=0;i<particlesCount*3;i++){
+// posArray[i] = Math.random()
+posArray[i] = (Math.random() - 0.5) * (Math.random()*5)
+}
+
+
+// Takes the array and sets the position atribute and assign the value from array
+particlesGeomety.setAttribute('position', new THREE.BufferAttribute(posArray,3));
+
 // Materials
 
-const material = new THREE.MeshBasicMaterial()
-material.color = new THREE.Color(0xff0000)
+const material = new THREE.PointsMaterial({
+size:0.005
+})
+const particlesMaterial = new THREE.PointsMaterial({
+size:0.005,
+map:cross,
+transparent:true,
+
+})
+
 
 // Mesh
-const sphere = new THREE.Mesh(geometry,material)
-scene.add(sphere)
+const sphere = new THREE.Points(geometry,material)
+const particlesMesh = new THREE.Points(particlesGeomety,particlesMaterial);
+scene.add(sphere,particlesMesh);
+
+// Particles mesh
 
 // Lights
 
@@ -77,6 +107,18 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+// Background
+renderer.setClearColor(new THREE.Color('#21282a'),1)
+
+// Mouse
+document.addEventListener('mousemove',animateParticles);
+let mouseX=0;
+let mouseY=0;
+
+function animateParticles(event){
+mouseY = event.clientY;
+mouseX = event.clientX;
+}
 
 /**
  * Animate
@@ -91,6 +133,15 @@ const tick = () =>
 
     // Update objects
     sphere.rotation.y = .5 * elapsedTime
+    particlesMesh.rotation.y = -.1 * elapsedTime
+
+    // Fix for no mouseover
+
+    if (mouseX>0){
+        particlesMesh.rotation.x = -mouseY * (elapsedTime *0.00008)
+        particlesMesh.rotation.y = -mouseX * (elapsedTime *0.00008)
+
+    }
 
     // Update Orbital Controls
     // controls.update()
